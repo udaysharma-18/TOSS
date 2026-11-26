@@ -1,0 +1,599 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Toss</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;600;800&display=swap">
+<style>
+/* Layout: wordmark top-left, one tall stage with the coin centred, the result word and a one-line hint beneath. */
+:root {
+  --bg: #f3f3f1;
+  --fg: #111113;
+  --muted: #84868d;
+  --shadow: rgba(17, 17, 19, 0.28);
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-coin: 'Cinzel', 'Times New Roman', serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0b0c; --fg: #f4f4f1; --muted: #7d7f86; --shadow: rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0b0c; --fg: #f4f4f1; --muted: #7d7f86; --shadow: rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+body {
+  box-sizing: border-box;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 22px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+.wordmark {
+  align-self: flex-start;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wordmark .o {
+  display: inline-block;
+  width: 0.86em;
+  height: 0.86em;
+  margin: 0 0.06em 0 0.03em;
+  vertical-align: -0.1em;
+  perspective: 220px;
+  cursor: pointer;
+}
+.wordmark .coin {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(8deg) rotateY(-20deg);
+  filter: drop-shadow(0 0.04em 0.05em rgba(0, 0, 0, 0.35));
+}
+.wordmark .coin i { position: absolute; inset: 0; display: block; border-radius: 50%; }
+.wordmark .coin .e { background: linear-gradient(90deg, #6f470a, #e0a92f 45%, #85590f); }
+.wordmark .coin .e:nth-child(1) { transform: translateZ(-0.045em); }
+.wordmark .coin .e:nth-child(2) { transform: translateZ(-0.0225em); }
+.wordmark .coin .e:nth-child(4) { transform: translateZ(0.0225em); }
+.wordmark .coin .e:nth-child(5) { transform: translateZ(0.045em); }
+.wordmark .coin .f {
+  backface-visibility: hidden;
+  transform: translateZ(0.05em);
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 250, 222, 0.95) 0, rgba(255, 240, 170, 0) 40%),
+    conic-gradient(from 200deg, #9c6a12, #f8d878, #c8921f, #fff1bd, #b17c1a, #f2cb62, #9c6a12);
+  box-shadow: inset 0 0 0 0.035em #8a5a0f, inset 0 0 0 0.07em rgba(255, 236, 170, 0.75);
+}
+.wordmark .coin .b { transform: translateZ(-0.05em) rotateY(180deg); }
+.wordmark .coin .f::before {
+  content: "";
+  position: absolute;
+  inset: 0.1em;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(110, 70, 8, 0.75) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 0.06em), #000 calc(100% - 0.06em));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 0.06em), #000 calc(100% - 0.06em));
+}
+.wordmark .coin .f::after {
+  content: "";
+  position: absolute;
+  inset: 0.22em;
+  border-radius: 50%;
+  border: 0.03em solid rgba(110, 70, 8, 0.65);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 246, 206, 0.6), transparent 65%);
+}
+.wordmark .coin.tossing { animation: logo-toss 0.95s cubic-bezier(0.3, 0.1, 0.4, 1); }
+.wordmark .coin.photo .f { background-size: 100% 100%; background-repeat: no-repeat; background-position: center; box-shadow: none; }
+.wordmark .coin.photo .f::before, .wordmark .coin.photo .f::after { display: none; }
+@keyframes logo-toss {
+  0%   { transform: translateY(0) rotateX(8deg) rotateY(-20deg); }
+  45%  { transform: translateY(-0.8em) rotateX(548deg) rotateY(-20deg); }
+  100% { transform: translateY(0) rotateX(1088deg) rotateY(-20deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wordmark .coin.tossing { animation: none; }
+}
+main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#stage {
+  position: relative;
+  width: min(100%, 460px);
+  height: min(58vh, 560px);
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  background: none;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+#stage:focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+#shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 13.5%;
+  width: 46%;
+  height: 5%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--shadow), transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+#result {
+  min-height: 1.15em;
+  margin-top: 0.25rem;
+  font-size: clamp(2.8rem, 10vw, 4.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+#result.on { opacity: 1; transform: none; }
+#hint {
+  min-height: 1.4em;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  transition: opacity 0.25s ease;
+}
+#hint.off { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  #result { transition: none; transform: none; }
+}
+</style>
+
+<h1 class="wordmark"><span class="sr">Toss</span><span aria-hidden="true">T<span class="o"><span class="coin"><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="f"></i><i class="f b"></i></span></span>ss</span></h1>
+<main>
+  <button id="stage" type="button" aria-label="Toss the coin">
+    <div id="shadow"></div>
+  </button>
+  <div id="result" aria-live="polite"></div>
+  <div id="hint">Tap to toss, drag to turn</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  var TAU = Math.PI * 2;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stage = document.getElementById('stage');
+  var shadow = document.getElementById('shadow');
+  var result = document.getElementById('result');
+  var hint = document.getElementById('hint');
+
+  var cur = 0;          // face showing: 0 heads, 1 tails
+  var busy = false;
+  var anim = null;
+  var ready = false;
+
+  function randBit() {
+    try { var a = new Uint8Array(1); crypto.getRandomValues(a); return a[0] & 1; }
+    catch (e) { return Math.random() < 0.5 ? 0 : 1; }
+  }
+  function finish(res) {
+    cur = res;
+    result.textContent = res ? 'Tails' : 'Heads';
+    result.classList.add('on');
+    hint.textContent = 'Tap to toss again';
+    hint.classList.remove('off');
+    busy = false;
+  }
+
+  /* ---------- Engraving ---------- */
+  function faceCanvas(kind, pal) {
+    var S = 2048, R = S / 2, c = R;
+    var cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    var g = cv.getContext('2d');
+    g.fillStyle = pal.bg; g.fillRect(0, 0, S, S);
+
+    // fine radial guilloche across the field
+    g.strokeStyle = pal.mid; g.lineWidth = 2.6;
+    for (var i = 0; i < 260; i++) {
+      var a = i / 260 * TAU;
+      g.beginPath();
+      g.moveTo(c + Math.cos(a) * 0.2 * R, c + Math.sin(a) * 0.2 * R);
+      g.lineTo(c + Math.cos(a) * 0.70 * R, c + Math.sin(a) * 0.70 * R);
+      g.stroke();
+    }
+
+    function ring(r1, r2, col) {
+      g.strokeStyle = col; g.lineWidth = (r2 - r1) * R;
+      g.beginPath(); g.arc(c, c, (r1 + r2) / 2 * R, 0, TAU); g.stroke();
+    }
+    ring(0.945, 0.992, pal.fg);   // raised outer lip
+    ring(0.84, 0.853, pal.fg);    // fine inner line
+
+    // beaded border
+    g.fillStyle = pal.fg;
+    for (var b = 0; b < 100; b++) {
+      var ba = b / 100 * TAU;
+      g.beginPath();
+      g.arc(c + Math.cos(ba) * 0.893 * R, c + Math.sin(ba) * 0.893 * R, 0.0135 * R, 0, TAU);
+      g.fill();
+    }
+
+    // laurel wreath
+    function leaf(x, y, dx, dy, len, wid) {
+      var nx = -dy, ny = dx;
+      g.fillStyle = pal.fg;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x + dx * len * 0.5 + nx * wid, y + dy * len * 0.5 + ny * wid, x + dx * len, y + dy * len);
+      g.quadraticCurveTo(x + dx * len * 0.5 - nx * wid, y + dy * len * 0.5 - ny * wid, x, y);
+      g.fill();
+      g.strokeStyle = pal.bg; g.lineWidth = 3.2;
+      g.beginPath(); g.moveTo(x + dx * len * 0.12, y + dy * len * 0.12);
+      g.lineTo(x + dx * len * 0.86, y + dy * len * 0.86); g.stroke();
+    }
+    function branch(side) {
+      var rr = 0.60, n = 12;
+      g.strokeStyle = pal.fg; g.lineWidth = 0.013 * R;
+      g.beginPath();
+      g.arc(c, c, rr * R, Math.PI / 2 - side * 0.08, Math.PI / 2 - side * 2.68, side === 1);
+      g.stroke();
+      for (var k = 0; k < n; k++) {
+        var t = k / (n - 1);
+        var ang = Math.PI / 2 - side * (0.2 + t * 2.46);
+        var px = c + Math.cos(ang) * rr * R, py = c + Math.sin(ang) * rr * R;
+        var tx = side * Math.sin(ang), ty = -side * Math.cos(ang);   // direction of travel
+        var rx = Math.cos(ang), ry = Math.sin(ang);                   // outward
+        var ph = 0.62, len = R * (0.105 + 0.045 * Math.sin(t * Math.PI)), wid = R * 0.052;
+        leaf(px, py, tx * Math.cos(ph) + rx * Math.sin(ph), ty * Math.cos(ph) + ry * Math.sin(ph), len, wid);
+        leaf(px, py, tx * Math.cos(ph) - rx * Math.sin(ph), ty * Math.cos(ph) - ry * Math.sin(ph), len, wid);
+      }
+      // berry at the tip
+      var ta = Math.PI / 2 - side * 2.78;
+      g.fillStyle = pal.fg; g.beginPath();
+      g.arc(c + Math.cos(ta) * rr * R, c + Math.sin(ta) * rr * R, 0.022 * R, 0, TAU); g.fill();
+    }
+    branch(1); branch(-1);
+
+    // curved lettering
+    function arcText(str, top, label) {
+      var size = 0.095 * R;
+      g.font = '700 ' + size + 'px ' + 'Cinzel, "Times New Roman", serif';
+      g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      g.fillStyle = pal.fg;
+      var track = size * 0.34, chars = str.split(''), w = [], total = 0, j;
+      for (j = 0; j < chars.length; j++) { w[j] = g.measureText(chars[j]).width + track; total += w[j]; }
+      total -= track;
+      var rad = (top ? 0.735 : 0.80) * R, acc = 0;
+      for (j = 0; j < chars.length; j++) {
+        g.save(); g.translate(c, c);
+        if (top) {
+          g.rotate(-total / (2 * rad) + (acc + (w[j] - track) / 2) / rad);
+          g.fillText(chars[j], 0, -rad);
+        } else {
+          g.rotate(total / (2 * rad) - (acc + (w[j] - track) / 2) / rad);
+          g.fillText(chars[j], 0, rad);
+        }
+        g.restore();
+        acc += w[j];
+      }
+    }
+    arcText(kind === 'heads' ? 'HEADS' : kind === 'logo' ? 'TOSS' : 'TAILS', true);
+    arcText('TOSS', false);
+
+    // centre device
+    if (kind === 'logo') {
+      /* plain centre for the small logo coin */
+    } else if (kind === 'heads') {
+      var fs = 0.74 * R;
+      g.font = '700 ' + fs + 'px Cinzel, "Times New Roman", serif';
+      g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = pal.fg;
+      var m = g.measureText('H');
+      var asc = m.actualBoundingBoxAscent || fs * 0.7;
+      g.fillText('H', c, c + asc / 2);
+    } else {
+      var ts = 0.74 * R;
+      g.font = '700 ' + ts + 'px Cinzel, "Times New Roman", serif';
+      g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = pal.fg;
+      var tm = g.measureText('T');
+      var tasc = tm.actualBoundingBoxAscent || ts * 0.7;
+      g.fillText('T', c, c + tasc / 2);
+    }
+    return cv;
+  }
+
+  function resample(cv, size) {
+    var o = document.createElement('canvas'); o.width = size; o.height = cv.height * size / cv.width;
+    var x = o.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    x.drawImage(cv, 0, 0, o.width, o.height);
+    return o;
+  }
+
+  function normalFrom(cv, strength) {
+    var W = cv.width, H = cv.height;
+    var src = cv.getContext('2d').getImageData(0, 0, W, H).data;
+    var h = new Float32Array(W * H), i;
+    for (i = 0; i < W * H; i++) h[i] = src[i * 4] / 255;
+    var out = document.createElement('canvas'); out.width = W; out.height = H;
+    var og = out.getContext('2d'), img = og.createImageData(W, H), d = img.data;
+    for (var y = 0; y < H; y++) {
+      var y0 = Math.max(y - 1, 0), y1 = Math.min(y + 1, H - 1);
+      for (var x = 0; x < W; x++) {
+        var x0 = Math.max(x - 1, 0), x1 = Math.min(x + 1, W - 1);
+        var dx = (h[y * W + x1] - h[y * W + x0]) * 0.5;
+        var dy = (h[y1 * W + x] - h[y0 * W + x]) * 0.5;
+        var nx = -dx * strength, ny = dy * strength, nz = 1;
+        var l = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        i = (y * W + x) * 4;
+        d[i] = (nx / l * 0.5 + 0.5) * 255;
+        d[i + 1] = (ny / l * 0.5 + 0.5) * 255;
+        d[i + 2] = (nz / l * 0.5 + 0.5) * 255;
+        d[i + 3] = 255;
+      }
+    }
+    og.putImageData(img, 0, 0);
+    return out;
+  }
+
+  function rimCanvas() {
+    var cv = document.createElement('canvas'); cv.width = 2048; cv.height = 64;
+    var g = cv.getContext('2d'); g.fillStyle = '#303030'; g.fillRect(0, 0, 2048, 64);
+    g.fillStyle = '#ffffff';
+    var N = 200, w = 2048 / N;
+    for (var i = 0; i < N; i++) g.fillRect(i * w, 0, w * 0.5, 64);
+    return cv;
+  }
+
+  /* ---------- Three.js scene ---------- */
+  var three = typeof THREE !== 'undefined';
+  var renderer, scene, camera, tiltG, moveG, flip, parts;
+  var REST_Y = -0.45;
+  var tilt = { x: 0, y: 0 }, target = { x: 0, y: 0 };
+  var drag = { active: false, moved: false, x: 0, y: 0, sx: 0, sy: 0, ox: 0, oy: 0 };
+
+  function setup() {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.setClearColor(0x000000, 0);
+    stage.insertBefore(renderer.domElement, shadow);
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(32, 1, 0.1, 60);
+    camera.position.set(0, 0, 9);
+
+    // studio environment: soft boxes reflected by the gold
+    var env = new THREE.Scene();
+    env.add(new THREE.Mesh(new THREE.BoxGeometry(24, 24, 24), new THREE.MeshBasicMaterial({ color: 0x3a3a3a, side: THREE.BackSide })));
+    function panel(w, h, x, y, z, k, col) {
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(col).multiplyScalar(k), side: THREE.DoubleSide }));
+      m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+    }
+    panel(26, 26, 0, 0, 11, 0.5, 0xffffff);
+    panel(10, 10, -4.5, 4, 10.5, 2.3, 0xfff4dc);   // soft warm key, upper left
+    panel(8, 14, 5.5, -1, 10.5, 1.3, 0xe9efff);    // cool wash, right
+    panel(24, 8, 0, -8.5, 10.5, 1, 0x141414);      // dark floor so the face has a gradient      // broad fill behind the camera
+    panel(9, 3.4, 0, 5.2, 9, 7, 0xffffff);       // upper key light
+    panel(2.2, 12, -8, 0, 3, 4, 0xfff0d2);       // left strip
+    panel(2.2, 12, 8, 0, 2, 4, 0xe4ecff);        // right strip
+    panel(14, 3, 0, -6, 6, 2, 0xffe0ad);         // warm floor bounce
+    panel(12, 3, 0, 9, -2, 5, 0xffffff);         // top
+    var pm = new THREE.PMREMGenerator(renderer);
+    scene.environment = pm.fromScene(env, 0.025).texture;
+    pm.dispose();
+
+    var NS = window.matchMedia('(pointer: fine)').matches ? 2048 : 1024;
+    var gold = new THREE.Color('#f0bd52');
+
+    function faceMaterial(kind) {
+      var hc = faceCanvas(kind, { bg: '#3a3a3a', mid: '#6a6a6a', fg: '#ffffff' });
+      var rc = faceCanvas(kind, { bg: '#8a8a8a', mid: '#757575', fg: '#363636' });
+      var nm = new THREE.CanvasTexture(normalFrom(resample(hc, NS), 3.2));
+      var rm = new THREE.CanvasTexture(resample(rc, 512));
+      nm.anisotropy = rm.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return new THREE.MeshStandardMaterial({
+        color: gold, metalness: 1, roughness: 1, roughnessMap: rm, normalMap: nm,
+        normalScale: new THREE.Vector2(1.3, 1.3), envMapIntensity: 1.15
+      });
+    }
+
+    var H = 0.15, lip = 0.014;
+    var rimNm = new THREE.CanvasTexture(normalFrom(rimCanvas(), 1.4));
+    rimNm.wrapS = THREE.RepeatWrapping;
+    var rimMat = new THREE.MeshStandardMaterial({
+      color: gold, metalness: 1, roughness: 0.3, normalMap: rimNm, envMapIntensity: 1.25, side: THREE.DoubleSide
+    });
+    var rim = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, H, 180, 1, true), rimMat);
+    rim.rotation.x = Math.PI / 2;
+    var front = new THREE.Mesh(new THREE.CircleGeometry(1, 180), faceMaterial('heads'));
+    front.position.z = H / 2 - lip;
+    var back = new THREE.Mesh(new THREE.CircleGeometry(1, 180), faceMaterial('tails'));
+    back.position.z = -(H / 2 - lip);
+    back.rotation.x = Math.PI;
+
+    parts = { front: front, back: back, mat: faceMaterial };
+    flip = new THREE.Group(); flip.add(rim, front, back);
+    moveG = new THREE.Group(); moveG.add(flip);
+    tiltG = new THREE.Group(); tiltG.position.y = REST_Y; tiltG.add(moveG);
+    scene.add(tiltG);
+  }
+
+  function resize() {
+    if (!renderer) return;
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.position.z = Math.max(9, 5.8 / camera.aspect);
+    camera.updateProjectionMatrix();
+  }
+
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!ready) return;
+    tilt.x += (target.x - tilt.x) * 0.08;
+    tilt.y += (target.y - tilt.y) * 0.08;
+    var y = 0, z = 0, rz = 0, k = 0, rx = flip.rotation.x, bounce = 0;
+
+    if (anim) {
+      var t = Math.min((now - anim.t0) / anim.dur, 1);
+      if (t < 1) {
+        var e = 1 - Math.pow(1 - t, 1.7);
+        rx = anim.from + (anim.to - anim.from) * e;
+        k = 4 * t * (1 - t);
+        y = anim.hop * k; z = anim.lift * k; rz = anim.spinZ * k;
+      } else {
+        if (!anim.landed) { anim.landed = now; finish(Math.abs(Math.round(anim.to / Math.PI)) % 2); }
+        var u = Math.min((now - anim.landed) / (reduce ? 1 : 480), 1);
+        rx = anim.to;
+        if (!reduce) {
+          y = 0.09 * Math.abs(Math.sin(u * Math.PI * 2)) * (1 - u);
+          rx = anim.to + 0.1 * Math.sin(u * Math.PI * 4) * (1 - u);
+          k = y * 2;
+        }
+        if (u >= 1) { flip.rotation.x = anim.to; anim = null; rx = flip.rotation.x; y = 0; k = 0; }
+      }
+    }
+
+    flip.rotation.x = rx;
+    moveG.position.set(0, y, z);
+    moveG.rotation.z = rz;
+    var sway = reduce ? 0 : Math.sin(now / 1500) * 0.035;
+    if (!drag.active || anim) { drag.ox *= 0.9; drag.oy *= 0.9; }
+    tiltG.rotation.x = -0.1 + tilt.x + drag.ox + (reduce ? 0 : Math.cos(now / 1900) * 0.02);
+    tiltG.rotation.y = tilt.y + drag.oy + sway;
+    renderer.render(scene, camera);
+
+    var kk = Math.min(k, 1);
+    shadow.style.opacity = String(1 - kk * 0.65);
+    shadow.style.transform = 'translateX(-50%) scale(' + (1 - kk * 0.42) + ',' + (1 - kk * 0.42) + ')';
+  }
+
+  function toss() {
+    if (busy) return;
+    busy = true;
+    var res = randBit();
+    result.classList.remove('on');
+    hint.classList.add('off');
+    if (!ready) { setTimeout(function () { finish(res); }, 350); return; }
+    var n = reduce ? (cur ^ res) : 6 + (Math.random() < 0.5 ? 0 : 2) + (cur ^ res);
+    var from = flip.rotation.x;
+    anim = {
+      t0: performance.now(), dur: reduce ? 420 : 1450 + n * 30,
+      from: from, to: from + n * Math.PI, res: res,
+      hop: reduce ? 0 : 1.0, lift: reduce ? 0 : 0.6, spinZ: (Math.random() - 0.5) * 0.45, landed: 0
+    };
+  }
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  stage.addEventListener('pointerdown', function (e) {
+    if (anim) return;
+    drag.active = true; drag.moved = false;
+    drag.x = drag.sx = e.clientX; drag.y = drag.sy = e.clientY;
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag.active) return;
+    if (Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) > 6) drag.moved = true;
+    if (!drag.moved) return;
+    drag.oy = clamp(drag.oy + (e.clientX - drag.x) * 0.012, -1.1, 1.1);
+    drag.ox = clamp(drag.ox + (e.clientY - drag.y) * 0.012, -0.8, 0.8);
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  function endDrag() { drag.active = false; }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('click', function () {
+    if (drag.moved) { drag.moved = false; return; }
+    toss();
+  });
+  window.addEventListener('keydown', function (e) {
+    if ((e.code === 'Space' || e.key === 'Enter') && e.target !== stage) { e.preventDefault(); toss(); }
+  });
+  window.addEventListener('pointermove', function (e) {
+    var nx = e.clientX / window.innerWidth - 0.5, ny = e.clientY / window.innerHeight - 0.5;
+    target.y = nx * 0.5; target.x = ny * 0.4;
+  });
+
+  // Renders the real gold coin once, small and plain, and uses that picture on the logo coin so both match.
+  function snapshotLogo() {
+    var oldFov = camera.fov, oldPR = renderer.getPixelRatio();
+    renderer.setPixelRatio(1);
+    renderer.setSize(256, 256, false);
+    camera.aspect = 1; camera.position.z = 9;
+    camera.fov = 2 * Math.atan(1.07 / 9) * 180 / Math.PI;
+    camera.updateProjectionMatrix();
+    var py = tiltG.position.y, keep = parts.front.material, lm = parts.mat('logo');
+    tiltG.position.y = 0; tiltG.rotation.set(-0.2, 0.15, 0);
+    moveG.position.set(0, 0, 0); moveG.rotation.set(0, 0, 0);
+    flip.rotation.x = 0;
+    parts.front.material = lm;
+    renderer.render(scene, camera);
+    var url = renderer.domElement.toDataURL('image/png');
+    parts.front.material = keep;
+    tiltG.position.y = py;
+    camera.fov = oldFov; camera.updateProjectionMatrix();
+    renderer.setPixelRatio(oldPR);
+    return url;
+  }
+  function applyLogo(url) {
+    var faces = document.querySelectorAll('.wordmark .coin .f');
+    for (var i = 0; i < faces.length; i++) faces[i].style.backgroundImage = 'url(' + url + ')';
+    document.querySelector('.wordmark .coin').classList.add('photo');
+  }
+
+  function start() {
+    if (!three) return;
+    try { setup(); } catch (err) { renderer = null; return; }
+    resize();
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+    try { applyLogo(snapshotLogo()); resize(); } catch (err2) {}
+    ready = true;
+  }
+
+  // Logo coin: one full toss per hover, even if the pointer leaves halfway.
+  var logoCoin = document.querySelector('.wordmark .coin');
+  var logoWord = document.querySelector('.wordmark');
+  function tossLogo() {
+    if (reduce || logoCoin.classList.contains('tossing')) return;
+    logoCoin.classList.add('tossing');
+  }
+  logoCoin.addEventListener('animationend', function () { logoCoin.classList.remove('tossing'); });
+  logoWord.addEventListener('pointerenter', tossLogo);
+  logoWord.addEventListener('click', tossLogo);
+
+  var fontsDone = false;
+  function go() { if (fontsDone) return; fontsDone = true; start(); }
+  requestAnimationFrame(frame);
+  if (document.fonts && document.fonts.load) {
+    Promise.race([
+      Promise.all([document.fonts.load('700 100px Cinzel'), document.fonts.load('600 100px Cinzel')]),
+      new Promise(function (r) { setTimeout(r, 2500); })
+    ]).then(go, go);
+  } else { go(); }
+})();
+</script>
+
+</body></html>
